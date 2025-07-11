@@ -1,6 +1,10 @@
 # Infrastructure Orchestrator Backend
 
 Backend API built with Django for Asset Management and Automated Resource Deployment using Terraform.  
+
+![Python 3.10](https://img.shields.io/badge/python-3.10-yellow)
+![Django 4.2](https://img.shields.io/badge/django-4.2-purple)
+
 ## Commands
 
 ### Setting Up the Environment
@@ -29,7 +33,11 @@ isort .
 ### Testing
 To run the tests, use:
 ```sh
-pytest -v --cov=app --cov-report=term-missing
+python manage.py test
+```
+To run tests with coverage, use:
+```sh
+coverage run manage.py test
 ```
 
 ### Starting the App
