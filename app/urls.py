@@ -4,8 +4,13 @@ from rest_framework.routers import DefaultRouter
 
 from app.auth_views import MyTokenObtainPairView
 from app.swagger import schema_view
-from app.views import (DataCenterViewSet, DiskArrayViewSet,
-                       MaintenanceRecordViewSet, ServerViewSet, UserViewSet)
+from app.views import (
+    DataCenterViewSet,
+    DiskArrayViewSet,
+    MaintenanceRecordViewSet,
+    ServerViewSet,
+    UserViewSet,
+)
 
 router = DefaultRouter()
 router.register(r"users", UserViewSet)
