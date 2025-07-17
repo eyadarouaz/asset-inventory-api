@@ -10,18 +10,36 @@ class Role(models.TextChoices):
     OPERATOR = "operator", "Operator"
 
 
-class Status(models.TextChoices):
+class UserStatus(models.TextChoices):
     INACTIVE = "inactive", "Inactive"
     ACTIVE = "active", "Active"
+
+
+class AssetStatus(models.TextChoices):
+    IN_USE = "in_use", "In Use"
+    MAINTENANCE = "maintenance", "Maintenance"
+    AVAILABLE = "available", "Available"
+
+
+class ConnectionType(models.TextChoices):
+    ISCSI = "iscsi", "iSCSI"
+    FIBRE = "fibre", "Fibre Channel"
+    NFS = "nfs", "NFS"
+    SMB = "smb", "SMB"
+    SAS = "sas", "SAS"
+    OTHER = "other", "Other"
 
 
 class User(AbstractUser):
     validation_code = models.CharField(max_length=100, null=True, blank=True)
     code_expires_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(
-        max_length=10, choices=Status.choices, default=Status.INACTIVE
+        max_length=10, choices=UserStatus.choices, default=UserStatus.INACTIVE
     )
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.OPERATOR)
+
+    def __str__(self):
+        return self.username
 
 
 class DataCenter(models.Model):
@@ -55,6 +73,11 @@ class Resource(models.Model):
     model = models.CharField(max_length=100)
     manufacturer = models.CharField(max_length=100)
     storage = models.PositiveIntegerField()
+    status = models.CharField(
+        max_length=20,
+        choices=AssetStatus.choices,
+        default=AssetStatus.AVAILABLE,
+    )
 
     class Meta:
         abstract = True
@@ -80,3 +103,22 @@ class DiskArray(Resource):
 
     def __str__(self):
         return f"DiskArray: {self.serial_number}"
+
+
+class ServerDiskArrayMap(models.Model):
+    server = models.ForeignKey(
+        Server, related_name="disk_array_links", on_delete=models.CASCADE
+    )
+    disk_array = models.ForeignKey(
+        DiskArray, related_name="server_links", on_delete=models.CASCADE
+    )
+    connection_type = models.CharField(
+        max_length=10, choices=ConnectionType.choices, default=ConnectionType.ISCSI
+    )
+    mount_point = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        unique_together = ("server", "disk_array")
+
+    def __str__(self):
+        return f"{self.server.serial_number} ↔ {self.disk_array.serial_number}"

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from .models import DataCenter, DiskArray, MaintenanceRecord, Role, Server, User
+from .models import (DataCenter, DiskArray, MaintenanceRecord, Role, Server,
+                     ServerDiskArrayMap, User)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -75,6 +76,40 @@ class DiskArraySerializer(serializers.ModelSerializer):
 
 
 class MaintenanceRecordSerializer(serializers.ModelSerializer):
+    resource_type = serializers.SerializerMethodField()
+    resource_id = serializers.IntegerField(source="object_id")
+    resource_repr = serializers.SerializerMethodField()
+
     class Meta:
         model = MaintenanceRecord
+        fields = [
+            "id",
+            "title",
+            "description",
+            "performed_at",
+            "datacenter",
+            "resource_type",
+            "resource_id",
+            "resource_repr",
+        ]
+
+    def get_resource_type(self, obj):
+        return obj.content_type.model if obj.content_type else None
+
+    def get_resource_repr(self, obj):
+        return str(obj.resource) if obj.resource else None
+
+
+class ServerDiskArrayMapSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ServerDiskArrayMap
         fields = "__all__"
+
+    def validate(self, data):
+        if ServerDiskArrayMap.objects.filter(
+            server=data["server"], disk_array=data["disk_array"]
+        ).exists():
+            raise serializers.ValidationError(
+                "This server-disk array mapping already exists."
+            )
+        return data

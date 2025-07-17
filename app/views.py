@@ -1,14 +1,12 @@
 from rest_framework import viewsets
 
-from .models import DataCenter, DiskArray, MaintenanceRecord, Server, User
+from .models import (DataCenter, DiskArray, MaintenanceRecord, Server,
+                     ServerDiskArrayMap, User)
 from .permissions import IsAdminOnly, IsAdminOrReadOnly
-from .serializers import (
-    DataCenterSerializer,
-    DiskArraySerializer,
-    MaintenanceRecordSerializer,
-    ServerSerializer,
-    UserSerializer,
-)
+from .serializers import (DataCenterSerializer, DiskArraySerializer,
+                          MaintenanceRecordSerializer,
+                          ServerDiskArrayMapSerializer, ServerSerializer,
+                          UserSerializer)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -39,3 +37,9 @@ class MaintenanceRecordViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
     queryset = MaintenanceRecord.objects.all()
     serializer_class = MaintenanceRecordSerializer
+
+
+class ServerDiskArrayMapViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAdminOrReadOnly]
+    queryset = ServerDiskArrayMap.objects.all()
+    serializer_class = ServerDiskArrayMapSerializer
