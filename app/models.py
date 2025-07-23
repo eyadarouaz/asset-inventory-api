@@ -1,3 +1,4 @@
+import pyotp
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -37,6 +38,13 @@ class User(AbstractUser):
         max_length=10, choices=UserStatus.choices, default=UserStatus.INACTIVE
     )
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.OPERATOR)
+    mfa_enabled = models.BooleanField(default=True)
+    totp_secret = models.CharField(max_length=32, blank=True, null=True)
+
+    def generate_totp_secret(self):
+        if not self.totp_secret:
+            self.totp_secret = pyotp.random_base32()
+            self.save()
 
     def __str__(self):
         return self.username

@@ -1,12 +1,12 @@
 from rest_framework import viewsets
 
-from .models import (DataCenter, DiskArray, MaintenanceRecord, Server,
-                     ServerDiskArrayMap, User)
-from .permissions import IsAdminOnly, IsAdminOrReadOnly
-from .serializers import (DataCenterSerializer, DiskArraySerializer,
-                          MaintenanceRecordSerializer,
-                          ServerDiskArrayMapSerializer, ServerSerializer,
-                          UserSerializer)
+from ..models import (DataCenter, DiskArray, MaintenanceRecord, Server,
+                      ServerDiskArrayMap, User)
+from ..permissions import IsAdminOnly, IsAdminOrReadOnly
+from ..serializers import (DataCenterSerializer, DiskArraySerializer,
+                           MaintenanceRecordSerializer,
+                           ServerDiskArrayMapSerializer, ServerSerializer,
+                           UserSerializer)
 
 
 class UserViewSet(viewsets.ModelViewSet):

@@ -2,10 +2,12 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from app.auth_views import MyTokenObtainPairView
 from app.swagger import schema_view
-from app.views import (DataCenterViewSet, DiskArrayViewSet,
-                       MaintenanceRecordViewSet, ServerDiskArrayMapViewSet, ServerViewSet, UserViewSet)
+from app.views.auth_views import MyTokenObtainPairView, mfa_setup
+from app.views.viewsets import (DataCenterViewSet, DiskArrayViewSet,
+                                MaintenanceRecordViewSet,
+                                ServerDiskArrayMapViewSet, ServerViewSet,
+                                UserViewSet)
 
 router = DefaultRouter()
 router.register(r"users", UserViewSet)
@@ -23,5 +25,6 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
     path("api/login/", MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/mfa/setup/", mfa_setup, name="mfa_setup"),
     path("api/", include(router.urls)),
 ]
