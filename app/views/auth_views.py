@@ -1,6 +1,7 @@
 import base64
 from io import BytesIO
 
+from app.serializers import UserSerializer
 import pyotp
 import qrcode
 from rest_framework import serializers
@@ -46,6 +47,12 @@ class MyAccessTokenSerializer(TokenObtainPairSerializer):
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyAccessTokenSerializer
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_me(request):
+    user = request.user
+    serializer = UserSerializer(user)
+    return Response({"user": serializer.data})
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
