@@ -1,4 +1,7 @@
 from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
 
 from ..models import (DataCenter, DiskArray, MaintenanceRecord, Server,
                       ServerDiskArrayMap, User)
@@ -37,6 +40,12 @@ class MaintenanceRecordViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
     queryset = MaintenanceRecord.objects.all()
     serializer_class = MaintenanceRecordSerializer
+
+    @action(detail=False, methods=["get"], url_path="by-datacenter/(?P<datacenter_id>[^/.]+)")
+    def by_datacenter(self, request, datacenter_id=None):
+        records = MaintenanceRecord.objects.filter(datacenter_id=datacenter_id)
+        serializer = self.get_serializer(records, many=True)
+        return Response(serializer.data)
 
 
 class ServerDiskArrayMapViewSet(viewsets.ModelViewSet):
