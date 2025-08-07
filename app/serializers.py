@@ -113,3 +113,11 @@ class ServerDiskArrayMapSerializer(serializers.ModelSerializer):
                 "This server-disk array mapping already exists."
             )
         return data
+    
+class UnifiedResourceSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    type = serializers.CharField()
+    content_type_id = serializers.IntegerField()
+
+

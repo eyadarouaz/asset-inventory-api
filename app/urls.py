@@ -7,7 +7,7 @@ from app.views.auth_views import MyTokenObtainPairView, get_me, mfa_setup
 from app.views.viewsets import (DataCenterViewSet, DiskArrayViewSet,
                                 MaintenanceRecordViewSet,
                                 ServerDiskArrayMapViewSet, ServerViewSet,
-                                UserViewSet)
+                                UserViewSet, get_datacenter_resources)
 
 router = DefaultRouter()
 router.register(r"users", UserViewSet)
@@ -28,4 +28,5 @@ urlpatterns = [
     path("api/me/", get_me, name="get-me"),
     path("api/mfa/setup/", mfa_setup, name="mfa_setup"),
     path("api/", include(router.urls)),
+    path('api/datacenters/<int:id>/resources/', get_datacenter_resources, name='datacenter-resources'),
 ]
