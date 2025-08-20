@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import (DataCenter, DiskArray, MaintenanceRecord, Role, Server,
+from .models import (AssetStatus, Cluster, DataCenter, DeploymentJob, DiskArray, MaintenanceRecord, Network, Role, Server,
                      ServerDiskArrayMap, User)
 
 
@@ -30,8 +30,20 @@ class DataCenterSerializer(serializers.ModelSerializer):
             )
         return value
 
+class ClusterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cluster
+        fields = "__all__"
+
+class NetworkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Network
+        fields = "__all__"
+
 
 class ServerSerializer(serializers.ModelSerializer):
+    ip_address = serializers.IPAddressField(allow_blank=True, allow_null=True, required=False)
+
     class Meta:
         model = Server
         fields = "__all__"
@@ -51,6 +63,26 @@ class ServerSerializer(serializers.ModelSerializer):
                 "A Server with this serial number already exists."
             )
         return value
+    
+    def validate(self, attrs):
+        # Convert blank string to None
+        if attrs.get("ip_address") == "":
+            attrs["ip_address"] = None
+
+        status = attrs.get("status", getattr(self.instance, "status", None))
+        ip_address = attrs.get("ip_address", getattr(self.instance, "ip_address", None))
+
+        if status == AssetStatus.IN_USE and not ip_address:
+            raise serializers.ValidationError({
+                "ip_address": "IP address is required when the server is in use."
+            })
+
+        if status != AssetStatus.IN_USE and ip_address:
+            raise serializers.ValidationError({
+                "ip_address": "IP address must be empty when the server is not in use."
+            })
+
+        return attrs
 
 
 class DiskArraySerializer(serializers.ModelSerializer):
@@ -119,5 +151,13 @@ class UnifiedResourceSerializer(serializers.Serializer):
     name = serializers.CharField()
     type = serializers.CharField()
     content_type_id = serializers.IntegerField()
+
+
+class DeploymentJobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeploymentJob
+        fields = '__all__'
+        read_only_fields = ['status', 'created_at']
+
 
 
