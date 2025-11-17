@@ -34,3 +34,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 .cache
+
+celerybeat-schedule
+celerybeat-schedule.db
+celerybeat-schedule.*
