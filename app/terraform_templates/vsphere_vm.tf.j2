@@ -1,56 +1,268 @@
+# vsphere_vm.tf.j2
+# Enhanced Terraform template for vSphere VM deployment
+
 terraform {
+  required_version = ">= 1.0"
+  
   required_providers {
     vsphere = {
-      source  = "vmware/vsphere"
-      version = "~> 2.0"
+      source  = "hashicorp/vsphere"
+      version = "~> 2.6.0"
     }
+  }
+  
+  backend "local" {
+    path = "terraform.tfstate"
   }
 }
 
+# ==================== Provider Configuration ====================
+
 provider "vsphere" {
-  user                 = "{{ vsphere_user }}"
-  password             = "{{ vsphere_password }}"
-  vsphere_server       = "{{ vsphere_server }}"
-  allow_unverified_ssl = true
+  user                 = var.vsphere_user
+  password             = var.vsphere_password
+  vsphere_server       = var.vsphere_server
+  allow_unverified_ssl = var.allow_unverified_ssl
 }
 
+# ==================== Variables ====================
+
+variable "vsphere_user" {
+  description = "vSphere username"
+  type        = string
+  sensitive   = true
+}
+
+variable "vsphere_password" {
+  description = "vSphere password"
+  type        = string
+  sensitive   = true
+}
+
+variable "vsphere_server" {
+  description = "vSphere server address"
+  type        = string
+}
+
+variable "allow_unverified_ssl" {
+  description = "Allow unverified SSL certificates"
+  type        = bool
+  default     = true
+}
+
+variable "datacenter" {
+  description = "Datacenter name"
+  type        = string
+}
+
+variable "datastore" {
+  description = "Datastore name"
+  type        = string
+}
+
+variable "cluster" {
+  description = "Cluster name"
+  type        = string
+}
+
+variable "network" {
+  description = "Network name"
+  type        = string
+}
+
+variable "vm_name" {
+  description = "Base name for VMs"
+  type        = string
+}
+
+variable "vm_count" {
+  description = "Number of VMs to create"
+  type        = number
+  default     = 1
+  
+  validation {
+    condition     = var.vm_count > 0 && var.vm_count <= 50
+    error_message = "VM count must be between 1 and 50"
+  }
+}
+
+variable "cpu" {
+  description = "Number of CPUs per VM"
+  type        = number
+  default     = 2
+  
+  validation {
+    condition     = var.cpu > 0 && var.cpu <= 32
+    error_message = "CPU count must be between 1 and 32"
+  }
+}
+
+variable "memory" {
+  description = "Memory in MB per VM"
+  type        = number
+  default     = 2048
+  
+  validation {
+    condition     = var.memory >= 512 && var.memory <= 65536
+    error_message = "Memory must be between 512 MB and 64 GB"
+  }
+}
+
+variable "disk_size" {
+  description = "Disk size in GB"
+  type        = number
+  default     = 20
+  
+  validation {
+    condition     = var.disk_size >= 10 && var.disk_size <= 1000
+    error_message = "Disk size must be between 10 GB and 1000 GB"
+  }
+}
+
+variable "guest_id" {
+  description = "Guest OS identifier"
+  type        = string
+  default     = "otherLinux64Guest"
+}
+
+variable "firmware" {
+  description = "Firmware type (bios or efi)"
+  type        = string
+  default     = "bios"
+  
+  validation {
+    condition     = contains(["bios", "efi"], var.firmware)
+    error_message = "Firmware must be either 'bios' or 'efi'"
+  }
+}
+
+variable "tags" {
+  description = "Tags to apply to VMs"
+  type        = map(string)
+  default     = {}
+}
+
+# ==================== Data Sources ====================
+
 data "vsphere_datacenter" "dc" {
-  name = "{{ datacenter }}"
+  name = var.datacenter
 }
 
 data "vsphere_datastore" "datastore" {
-  name          = "{{ datastore }}"
+  name          = var.datastore
   datacenter_id = data.vsphere_datacenter.dc.id
 }
 
 data "vsphere_compute_cluster" "cluster" {
-  name          = "{{ cluster }}"
+  name          = var.cluster
   datacenter_id = data.vsphere_datacenter.dc.id
 }
 
 data "vsphere_network" "network" {
-  name          = "{{ network }}"
+  name          = var.network
   datacenter_id = data.vsphere_datacenter.dc.id
 }
 
+# ==================== Resources ====================
+
 resource "vsphere_virtual_machine" "vm" {
-  count            = {{ vm_count }}
-  name             = "${{ vm_name }}-${count.index + 1}"
+  count            = var.vm_count
+  name             = format("%s-%02d", var.vm_name, count.index + 1)
   resource_pool_id = data.vsphere_compute_cluster.cluster.resource_pool_id
   datastore_id     = data.vsphere_datastore.datastore.id
-
-  num_cpus = {{ cpu }}
-  memory   = {{ memory }}
-
-  guest_id = "otherGuest"
-
+  
+  # Hardware Configuration
+  num_cpus               = var.cpu
+  num_cores_per_socket   = 1
+  memory                 = var.memory
+  guest_id               = var.guest_id
+  firmware               = var.firmware
+  
+  # Boot options
+  boot_delay = 1000
+  
+  # Network Configuration
   network_interface {
     network_id   = data.vsphere_network.network.id
     adapter_type = "vmxnet3"
   }
-
+  
+  # Disk Configuration
   disk {
-    label = "disk0"
-    size  = 10
+    label            = "disk0"
+    size             = var.disk_size
+    thin_provisioned = true
+    eagerly_scrub    = false
   }
+  
+  # VM Options
+  enable_disk_uuid = true
+  
+  # Wait for guest network to be available
+  wait_for_guest_net_timeout  = 0
+  wait_for_guest_ip_timeout   = 0
+  
+  # Lifecycle
+  lifecycle {
+    ignore_changes = [
+      annotation,
+      clone,
+    ]
+  }
+  
+  # Metadata
+  annotation = jsonencode({
+    created_by    = "Terraform"
+    deployment_id = "{{ deployment_id }}"
+    created_at    = timestamp()
+    vm_index      = count.index + 1
+  })
+}
+
+# ==================== Outputs ====================
+
+output "vm_ids" {
+  description = "vSphere IDs of created VMs"
+  value       = vsphere_virtual_machine.vm[*].id
+}
+
+output "vm_names" {
+  description = "Names of created VMs"
+  value       = vsphere_virtual_machine.vm[*].name
+}
+
+output "vm_uuids" {
+  description = "UUIDs of created VMs"
+  value       = vsphere_virtual_machine.vm[*].uuid
+}
+
+output "vm_moids" {
+  description = "Managed Object IDs of created VMs"
+  value       = vsphere_virtual_machine.vm[*].moid
+}
+
+output "vm_default_ips" {
+  description = "Default IP addresses of created VMs"
+  value       = vsphere_virtual_machine.vm[*].default_ip_address
+}
+
+output "deployment_summary" {
+  description = "Deployment summary"
+  value = {
+    vm_count      = var.vm_count
+    total_cpu     = var.vm_count * var.cpu
+    total_memory  = var.vm_count * var.memory
+    total_storage = var.vm_count * var.disk_size
+    datacenter    = var.datacenter
+    cluster       = var.cluster
+    network       = var.network
+    datastore     = var.datastore
+  }
+}
+
+# ==================== Locals ====================
+
+locals {
+  deployment_timestamp = timestamp()
+  deployment_id        = "{{ deployment_id }}"
 }
