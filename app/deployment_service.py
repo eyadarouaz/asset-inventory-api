@@ -1,7 +1,3 @@
-"""
-Enhanced deployment service for Terraform-based VM deployment
-Follows the activity diagram workflow
-"""
 import os
 import json
 import subprocess
