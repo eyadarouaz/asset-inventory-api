@@ -10,17 +10,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
-# ==================== Function-Based Views ====================
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def sync_vsphere_inventory(request):
-    """
-    Sync all inventory from vSphere
-    
-    POST /api/sync-vsphere/
-    """
     try:
         sync_service = vSphereSyncService()
         results = sync_service.sync_all()
@@ -42,11 +34,6 @@ def sync_vsphere_inventory(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def sync_datacenters(request):
-    """
-    Sync only datacenters from vSphere
-    
-    POST /api/sync-vsphere/datacenters/
-    """
     try:
         sync_service = vSphereSyncService()
         count = sync_service.sync_datacenters()
@@ -68,11 +55,6 @@ def sync_datacenters(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def sync_clusters(request):
-    """
-    Sync only clusters from vSphere
-    
-    POST /api/sync-vsphere/clusters/
-    """
     try:
         sync_service = vSphereSyncService()
         count = sync_service.sync_clusters()
@@ -94,11 +76,6 @@ def sync_clusters(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def sync_networks(request):
-    """
-    Sync only networks from vSphere
-    
-    POST /api/sync-vsphere/networks/
-    """
     try:
         sync_service = vSphereSyncService()
         count = sync_service.sync_networks()
@@ -121,11 +98,6 @@ def sync_networks(request):
 @permission_classes([IsAuthenticated])
 @cache_page(60)  # Cache for 1 minute
 def vsphere_info(request):
-    """
-    Get vSphere environment information
-    
-    GET /api/vsphere-info/
-    """
     try:
         sync_service = vSphereSyncService()
         info = sync_service.get_vsphere_info()
@@ -143,13 +115,6 @@ def vsphere_info(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def discover_vsphere_resources(request):
-    """
-    Discover resources from vSphere without saving to database
-    Useful for preview before sync
-    
-    GET /api/discover-vsphere/?resource_type=datacenters
-    Query params: resource_type (datacenters|clusters|networks|vms|hosts)
-    """
     resource_type = request.query_params.get('resource_type', 'datacenters')
     
     try:
@@ -185,18 +150,7 @@ def discover_vsphere_resources(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# ==================== ViewSet Actions (Add to existing ViewSets) ====================
-
-# Add these actions to your existing DataCenterViewSet
 def datacenter_sync_action(self, request):
-    """
-    Action method to add to DataCenterViewSet
-    
-    Usage:
-    @action(detail=False, methods=['post'])
-    def sync_from_vsphere(self, request):
-        return datacenter_sync_action(self, request)
-    """
     try:
         sync_service = vSphereSyncService()
         count = sync_service.sync_datacenters()
@@ -214,14 +168,6 @@ def datacenter_sync_action(self, request):
 
 
 def cluster_sync_action(self, request):
-    """
-    Action method to add to ClusterViewSet
-    
-    Usage:
-    @action(detail=False, methods=['post'])
-    def sync_from_vsphere(self, request):
-        return cluster_sync_action(self, request)
-    """
     try:
         sync_service = vSphereSyncService()
         count = sync_service.sync_clusters()
@@ -239,14 +185,6 @@ def cluster_sync_action(self, request):
 
 
 def network_sync_action(self, request):
-    """
-    Action method to add to NetworkViewSet
-    
-    Usage:
-    @action(detail=False, methods=['post'])
-    def sync_from_vsphere(self, request):
-        return network_sync_action(self, request)
-    """
     try:
         sync_service = vSphereSyncService()
         count = sync_service.sync_networks()
@@ -263,14 +201,7 @@ def network_sync_action(self, request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# ==================== Example: Enhanced ViewSet with Sync ====================
-
 class DataCenterViewSetWithSync(viewsets.ModelViewSet):
-    """
-    Example of how to add sync action to your existing DataCenterViewSet
-    You can copy the sync_from_vsphere action to your existing ViewSet
-    """
-    # ... your existing queryset, serializer_class, etc.
     
     @action(detail=False, methods=['post'], url_path='sync-from-vsphere')
     def sync_from_vsphere(self, request):
